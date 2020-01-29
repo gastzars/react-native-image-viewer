@@ -602,11 +602,19 @@ export default class ImageViewer extends Component {
 
     const imageInfo = Object.assign({}, this.state.imagesInfo[index]);
     const prefetchImagePromise = Image.prefetch(imageInfo.url);
+    const { headers = {} } = this.props
 
+    let mapHeaders = { }
+    if (!!headers.headers) {
+      mapHeaders = { ...headers.headers }
+    } else {
+      mapHeaders = headers
+    }
     prefetchImagePromise.then(
       () => {
-        Image.getSize(
+        Image.getSizeWithHeaders(
           imageInfo.url,
+          mapHeaders,
           (width, height) => {
             imageInfo.width = width;
             imageInfo.height = height;
@@ -621,8 +629,21 @@ export default class ImageViewer extends Component {
         );
       },
       () => {
-        imageInfo.status = "fail";
-        this.updateImageInfo(index, imageInfo);
+        Image.getSizeWithHeaders(
+          imageInfo.url,
+          mapHeaders,
+          (width, height) => {
+            imageInfo.width = width;
+            imageInfo.height = height;
+            imageInfo.status = "success";
+
+            this.updateImageInfo(index, imageInfo);
+          },
+          error => {
+            imageInfo.status = "fail";
+            this.updateImageInfo(index, imageInfo);
+          }
+        );
       }
     );
   }
